@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+message Size {
+  float width = 1;
+  float height = 2;
+  float depth = 3;
+}
+
+message MyColor {
+  float red = 1;
+  float green = 2;
+  float blue = 3;
+}
+
+message Item {
+  string name = 1;
+  int32 id = 2;
+  Size size = 3;
+  MyColor color = 4;
+  repeated string tags = 5;
+}
+
+message ItemBind {
+  int32 bind = 1;
+}
+
+message ItemList {
+  repeated Item items = 1;
+  repeated ItemBind itemBinds = 2;
+}
+
+message ItemRecv {
+  string message = 1;
+}
+
+service Greeter {
+  rpc ReqItem (ItemList) returns (ItemRecv);
+}

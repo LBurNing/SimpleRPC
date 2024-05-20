@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "RPCServer/1.0.0": {
+        "dependencies": {
+          "Google.Protobuf": "3.26.0"
+        },
+        "runtime": {
+          "RPCServer.dll": {}
+        }
+      },
+      "Google.Protobuf/3.26.0": {
+        "runtime": {
+          "lib/net5.0/Google.Protobuf.dll": {
+            "assemblyVersion": "3.26.0.0",
+            "fileVersion": "3.26.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "RPCServer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Google.Protobuf/3.26.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-AkWr2Hz/rycJapYHXS3gT5UVq8K8D2gkNA70ePe22oejNVGMkw5Mtasri2VbNtBCgbqtE8MsIPYp73xud2wAVQ==",
+      "path": "google.protobuf/3.26.0",
+      "hashPath": "google.protobuf.3.26.0.nupkg.sha512"
+    }
+  }
+}
