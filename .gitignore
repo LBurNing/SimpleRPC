@@ -1,0 +1,23 @@
+﻿################################################################################
+# 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
+################################################################################
+
+/RPCClient/.vs/RPCClient
+/RPCClient/Library
+/RPCClient/Logs
+/RPCClient/obj/Debug
+/RPCClient/Temp
+/RPCClient/.vsconfig
+/RPCClient/Assembly-CSharp-firstpass.csproj
+/RPCClient/Assembly-CSharp.csproj
+/RPCClient/RPCClient.sln
+/RPCClient/UniTask.Addressables.csproj
+/RPCClient/UniTask.csproj
+/RPCClient/UniTask.DOTween.csproj
+/RPCClient/UniTask.Editor.csproj
+/RPCClient/UniTask.Linq.csproj
+/RPCClient/UniTask.TextMeshPro.csproj
+/RPCServer/.vs/RPC
+/RPCServer/obj
+/RPCServer/bin/Debug/net8.0
+/RPCClient/obj/Release
