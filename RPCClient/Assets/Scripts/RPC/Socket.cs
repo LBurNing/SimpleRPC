@@ -54,7 +54,7 @@ namespace Game
                 {
                     BuffMessage msg = _receiveMsgs.Dequeue();
                     RPCMoudle.OnRPC(msg);
-                    RPCMoudle.PutBuffMessage(msg);
+                    GameFrame.message.PutBuffMessage(msg);
                 }
             }
             Profiler.EndSample();
@@ -82,7 +82,7 @@ namespace Game
             }
         }
 
-        private async void OnConnect()
+        private void OnConnect()
         {
             try
             {
@@ -90,7 +90,8 @@ namespace Game
                 {
                     LogHelper.Log("connected...");
                     SetSocketState(SocketState.Connected);
-                    await UniTask.WhenAll(SendThread(), RecvThread());
+                    _ = UniTask.Create(() => SendThread());
+                    _ = UniTask.Create(() => RecvThread());
                 }
                 else
                 {
@@ -121,14 +122,15 @@ namespace Game
                     {
                         BuffMessage msg = _sendMsgs.Dequeue();
                         var cts = new CancellationTokenSource();
-                        cts.CancelAfterSlim(TimeSpan.FromMilliseconds(10));
+                        cts.CancelAfterSlim(TimeSpan.FromSeconds(10));
 
                         await Stream.WriteAsync(msg.bytes, 0, msg.length, cts.Token);
                         LogHelper.Log($"发送完成: {msg.length} byte");
+                        GameFrame.message.PutBuffMessage(msg);
                     }
                     catch (OperationCanceledException ex)
                     {
-                        LogHelper.LogError(ex.Message);
+                        LogHelper.LogError("Time out: " + ex.Message);
                     }
                     catch (Exception ex)
                     {
@@ -144,7 +146,6 @@ namespace Game
 
         private async UniTask RecvThread()
         {
-  
             await UniTask.SwitchToTaskPool();
             while (_socketState == SocketState.Connected)
             {
@@ -171,7 +172,7 @@ namespace Game
                             break;
 
                         // 读取完整消息
-                        BuffMessage msg = RPCMoudle.GetBuffMessage();
+                        BuffMessage msg = GameFrame.message.GetBuffMessage();
                         Buffer.BlockCopy(_recvBuff, offset + sizeof(int), msg.bytes, 0, dataLength);
 
                         lock (_receiveMsgs)
@@ -217,7 +218,7 @@ namespace Game
             }
             else
             {
-                RPCMoudle.PutBuffMessage(message);
+                GameFrame.message.PutBuffMessage(message);
             }
         }
 
@@ -230,7 +231,7 @@ namespace Game
             {
                 if (_tcpClient.Connected)
                 {
-                    _tcpClient.Close();
+                    _tcpClient.Dispose();
                     SetSocketState(SocketState.Close);
                 }
             }

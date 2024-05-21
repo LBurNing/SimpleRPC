@@ -8,6 +8,21 @@ namespace Game
     {
         public static readonly int DATA_SZIE = 1024 * 8;
         public static readonly int BUFFER_SIZE = 1024 * 100;
+        private static readonly int TA = 63689;
+        private static readonly int TB = 378551;
+
+        public static int Hash(string id)
+        {
+            int seed = TA;
+            int hash = 0;
+            foreach (char c in id)
+            {
+                hash = hash * seed + c;
+                seed *= TB;
+            }
+
+            return hash;
+        }
     }
 
     public enum DateType

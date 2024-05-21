@@ -19,6 +19,12 @@ namespace Game
         {
             LogHelper.Log($"Recv: state = {msg}");
         }
+
+        [Recv]
+        private static void RecvMove(int x, int y)
+        {
+            LogHelper.Log($"RecvMove: x = {x}, y = {y}");
+        }
         #endregion
     }
 }

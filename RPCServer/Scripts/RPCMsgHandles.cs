@@ -7,7 +7,7 @@ namespace Game
     public class RPCMsgHandles
     {
         [Recv]
-        public static void ReqAttack(int skillId, string sklillDesc, float cd, Attack attack, double pubCd)
+        public static void ReqAttack(Role role, int skillId, string sklillDesc, float cd, Attack attack, double pubCd)
         {
             Console.WriteLine($"Recv: skillId = {skillId}, sklillDesc = {sklillDesc}");
             ItemList itemList = new ItemList();
@@ -28,14 +28,21 @@ namespace Game
                 itemList.ItemBinds.Add(itemBind);
             }
 
-            RPC.Call("RecvAttack", 10086, attack, itemList);
+            RPC.Call(role, "RecvAttack", 10086, attack, itemList);
         }
 
         [Recv]
-        public static void ReqDelete(ItemList itemList)
+        public static void ReqDelete(Role role, ItemList itemList)
         {
             Console.WriteLine($"Recv: ItemList.Len = {itemList.Items.Count}");
-            RPC.Call("RecvDelete", 0);
+            RPC.Call(role, "RecvDelete", 0);
+        }
+
+        [Recv]
+        public static void ReqMove(Role role, int x, int y)
+        {
+            Console.WriteLine($"Recv: Move, x = {x}, y = {y}, 同步给所有客户端");
+            RPC.Call("RecvMove", x, y);
         }
     }
 }

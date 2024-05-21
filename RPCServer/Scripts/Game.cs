@@ -9,15 +9,15 @@ namespace Game
     class Game
     {
         private static int FrameCount = 60;
-        public static Socket Socket { get; set; }
+        public static Gateway gateway { get; set; }
 
 
         public static void Init()
         {
             BitConverterHelper.Init();
             RPC.Init();
-            Socket = new Socket();
-            Socket.RunServer();
+            gateway = new Gateway();
+            gateway.RunServer();
 
             Task.Run(Update);
             Console.ReadLine();
@@ -29,7 +29,7 @@ namespace Game
             {
                 try
                 {
-                    Socket?.Update();
+                    gateway?.Update();
                     await Task.Delay(1000 / FrameCount);
                 }
                 catch(Exception ex)

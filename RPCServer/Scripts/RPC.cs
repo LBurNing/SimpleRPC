@@ -69,11 +69,18 @@ namespace Game
                 _objectFactory.Put(msg);
         }
 
+        public static void Call(Role role, string id, params object[] args)
+        {
+            int hash = Hash(id);
+            BuffMessage msg = PackAll(hash, args);
+            role.Send(msg);
+        }
+
         public static void Call(string id, params object[] args)
         {
             int hash = Hash(id);
             BuffMessage msg = PackAll(hash, args);
-            Game.Socket.Send(msg);
+            Game.gateway.Send(msg);
         }
 
         public static void OnRPC(BuffMessage msg)
@@ -81,10 +88,10 @@ namespace Game
             if(msg == null)
                 return;
 
-            UnPack(msg.bytes);
+            Invoke(msg.bytes);
         }
 
-        public static void UnPack(byte[] buffer)
+        public static void Invoke(byte[] buffer)
         {
             int protoId = ((buffer[3] & 0xFF) << 24) | ((buffer[2] & 0xFF) << 16) | ((buffer[1] & 0xFF) << 8) | (buffer[0] & 0xFF);
             Method method = null;
@@ -201,6 +208,9 @@ namespace Game
             }
 
             msg.length = offset;
+            Buffer.BlockCopy(msg.bytes, 0, msg.bytes, sizeof(int), msg.length);
+            BitConverter.TryWriteBytes(msg.bytes.AsSpan(0), msg.length);
+            msg.length += sizeof(int);
             return msg;
         }
 
@@ -257,9 +267,13 @@ namespace Game
             if (types == null)
                 return;
 
-            int offset = 0;
+            int offset = 1;
             List<object> objs = new List<object>();
-            for (int index = 0; index < types.Count; index++)
+            object obj = UnpackValue(buffer, DateType.String, ref offset, 0);
+            Role role = Game.gateway.GetRole((string)obj);
+            objs.Add(role);
+
+            for (int index = 1; index < types.Count; index++)
             {
                 DateType type = types[index];
                 DateType dateType = (DateType)buffer[offset++];
@@ -268,7 +282,7 @@ namespace Game
                     Console.WriteLine($"dateType bo equals, recv: {Enum.GetName(typeof(DateType), type)} != local: {Enum.GetName(typeof(DateType), dateType)}");
                 }
 
-                object obj = UnpackValue(buffer, dateType, ref offset, index);
+                obj = UnpackValue(buffer, dateType, ref offset, index);
                 objs.Add(obj!);
             }
 

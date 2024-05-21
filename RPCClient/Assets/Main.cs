@@ -18,6 +18,7 @@ namespace Game
         {
             _instance = this;
             DontDestroyOnLoad(this);
+            GameFrame.Init();
             BitConverterHelper.Init();
             Profiler.BeginSample("Init RPCMoudle");
             RPCMoudle.Init();
@@ -33,6 +34,7 @@ namespace Game
         private void Update()
         {
             _socket?.Update();
+            GameFrame.UpdateMoudle();
         }
 
         private void InitManager()
@@ -43,6 +45,7 @@ namespace Game
         public void OnDestroy()
         {
             Socket?.Dispose();
+            GameFrame.UnInitMoudle();
         }
     }
 }

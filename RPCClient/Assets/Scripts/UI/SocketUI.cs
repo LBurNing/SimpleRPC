@@ -9,16 +9,19 @@ namespace UI
     {
         public TMP_InputField _ip;
         public TMP_InputField _port;
+        public TMP_InputField _user;
         public Button _connect;
-        public Button _send;
-        public Button _send1;
+        public Button _reqAttack;
+        public Button _reqItem;
+        public Button _reqMove;
         public TextMeshProUGUI _log;
 
         void Start()
         {
             _connect.onClick.AddListener(OnConnect);
-            _send.onClick.AddListener(OnSend);
-            _send1.onClick.AddListener(OnSend1);
+            _reqAttack.onClick.AddListener(OnReqAttack);
+            _reqItem.onClick.AddListener(OnReqItem);
+            _reqMove.onClick.AddListener(OnReqMove);
         }
 
         void Update()
@@ -29,9 +32,10 @@ namespace UI
         private void OnConnect()
         {
             Main.Socket.Connect(_ip.text, int.Parse(_port.text));
+            GameFrame.myRole.Create(_user.text);
         }
 
-        private void OnSend()
+        private void OnReqAttack()
         {
             Attack attack = new Attack();
             attack.Id = 10;
@@ -39,7 +43,7 @@ namespace UI
             RPCMoudle.Call("ReqAttack", 125, "À×öªÍòÀ¤", 5.21f, attack, 10.2563);
         }
 
-        private void OnSend1()
+        private void OnReqItem()
         {
             ItemList itemList = new ItemList();
             for (int i = 0; i < 200; i++)
@@ -61,6 +65,11 @@ namespace UI
             }
 
             RPCMoudle.Call("ReqDelete", itemList);
+        }
+
+        private void OnReqMove()
+        {
+            RPCMoudle.Call("ReqMove", 12, 26);
         }
     }
 }

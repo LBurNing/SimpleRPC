@@ -21,9 +21,6 @@ namespace Game
     class RPCMoudle
     {
         private static Dictionary<int, Method> _msg = new Dictionary<int, Method>();
-        private static ObjectFactory<BuffMessage> _objectFactory = new ObjectFactory<BuffMessage>();
-        private static readonly int TA = 63689;
-        private static readonly int TB = 378551;
 
         public static void Init()
         {
@@ -56,7 +53,7 @@ namespace Game
                     index++;
                 }
 
-                int hash = Hash(methodInfo.Name);
+                int hash = Globals.Hash(methodInfo.Name);
                 if (_msg.ContainsKey(hash))
                     throw new Exception("register rpc methodInfo hash conflict: " + methodInfo.Name);
 
@@ -64,22 +61,10 @@ namespace Game
             }
         }
 
-        public static BuffMessage GetBuffMessage()
-        {
-            lock (_objectFactory)
-                return _objectFactory.Get();
-        }
-
-        public static void PutBuffMessage(BuffMessage msg)
-        {
-            lock (_objectFactory)
-                _objectFactory.Put(msg);
-        }
-
         public static void Call(string id, params object[] args)
         {
             Profiler.BeginSample("rpc call");
-            int hash = Hash(id);
+            int hash = Globals.Hash(id);
             BuffMessage msg = PackAll(hash, args);
             Main.Socket.Send(msg);
             Profiler.EndSample();
@@ -106,10 +91,10 @@ namespace Game
                 return;
             }
 
-            BuffMessage buffMessage = GetBuffMessage();
+            BuffMessage buffMessage = GameFrame.message.GetBuffMessage();
             Array.Copy(buffer, sizeof(int), buffMessage.bytes, 0, buffer.Length - sizeof(int));
             method.Invoke(buffMessage.bytes);
-            PutBuffMessage(buffMessage);
+            GameFrame.message.PutBuffMessage(buffMessage);
         }
 
         private static DateType GetDateType(Type type)
@@ -149,9 +134,10 @@ namespace Game
         private static BuffMessage PackAll(int id, params object[] args)
         {
             int offset = 0;
-            BuffMessage msg = GetBuffMessage();
+            BuffMessage msg = GameFrame.message.GetBuffMessage();
             BitConverter.TryWriteBytes(msg.bytes.AsSpan(offset), id);
             offset += sizeof(int);
+            BitConverterHelper.WriteString(msg.bytes, ref offset, GameFrame.myRole.Id);
 
             foreach (object arg in args)
             {
@@ -214,19 +200,6 @@ namespace Game
 
             msg.length = offset;
             return msg;
-        }
-
-        private static int Hash(string id)
-        {
-            int seed = TA;
-            int hash = 0;
-            foreach (char c in id)
-            {
-                hash = hash * seed + c;
-                seed *= TB;
-            }
-
-            return hash;
         }
 
         public static void Dispose()
