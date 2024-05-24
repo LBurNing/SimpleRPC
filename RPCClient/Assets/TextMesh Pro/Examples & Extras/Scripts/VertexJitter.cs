@@ -115,10 +115,10 @@ namespace TMPro.Examples
                     // Retrieve the pre-computed animation data for the given character.
                     VertexAnim vertAnim = vertexAnim[i];
 
-                    // Get the index of the material used by the current character.
+                    // Get the _paramIndex of the material used by the current character.
                     int materialIndex = textInfo.characterInfo[i].materialReferenceIndex;
 
-                    // Get the index of the first vertex used by this text element.
+                    // Get the _paramIndex of the first vertex used by this text element.
                     int vertexIndex = textInfo.characterInfo[i].vertexIndex;
 
                     // Get the cached vertices of the mesh used by this text element (character or sprite).

@@ -59,21 +59,21 @@ namespace Game
 
                     try
                     {
-                        Console.WriteLine("send thread ID: {0}", Thread.CurrentThread.ManagedThreadId);
+                        LogHelper.Log("send thread ID: {0}", Thread.CurrentThread.ManagedThreadId);
                         BuffMessage msg = _sendMsgs.Dequeue();
                         var cts = new CancellationTokenSource();
                         cts.CancelAfter(TimeSpan.FromMilliseconds(10));
 
                         await _client.GetStream().WriteAsync(msg.bytes, 0, msg.length, cts.Token);
-                        Console.WriteLine($"数据发送完成: {msg.length}");
+                        LogHelper.Log($"数据发送完成: {msg.length}");
                     }
                     catch (OperationCanceledException ex)
                     {
-                        Console.WriteLine(ex);
+                        LogHelper.Log(ex);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex);
+                        LogHelper.Log(ex);
                     }
 
                     await Task.Delay(1);
@@ -96,12 +96,12 @@ namespace Game
                         int length = _client.GetStream().Socket.Receive(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset, SocketFlags.None);
                         if (length == 0)
                         {
-                            Console.WriteLine("client disconnected..");
+                            LogHelper.Log("client disconnected..");
                             _client.Close();
                             break;
                         }
 
-                        Console.WriteLine("recv thread ID: {0}", Thread.CurrentThread.ManagedThreadId);
+                        LogHelper.Log("recv thread ID: {0}", Thread.CurrentThread.ManagedThreadId);
                         _recvOffset += length;
                         int offset = 0;
                         while (true)
@@ -134,7 +134,7 @@ namespace Game
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to receive {ex.Message}");
+                        LogHelper.Log($"Failed to receive {ex.Message}");
                     }
 
                     await Task.Delay(1);

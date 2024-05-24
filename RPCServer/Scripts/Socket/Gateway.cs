@@ -35,7 +35,7 @@ namespace Game
         {
             _listener = new TcpListener(IPAddress.Any, 8888);
             _listener.Start();
-            Console.WriteLine("Server started...");
+            LogHelper.Log("Server started...");
 
             while (true)
             {
@@ -61,7 +61,7 @@ namespace Game
 
                 role = new Role(id, client);
                 _roles[id] = role;
-                Console.WriteLine($"{id} Client connected...");
+                LogHelper.Log($"{id} Client connected...");
                 break;
             }
         }

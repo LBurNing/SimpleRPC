@@ -51,12 +51,12 @@ namespace TMPro.Examples
 
         void OnWordSelection(string word, int firstCharacterIndex, int length)
         {
-            Debug.Log("Word [" + word + "] with first character index of " + firstCharacterIndex + " and length of " + length + " has been selected.");
+            Debug.Log("Word [" + word + "] with first character _paramIndex of " + firstCharacterIndex + " and length of " + length + " has been selected.");
         }
 
         void OnLineSelection(string lineText, int firstCharacterIndex, int length)
         {
-            Debug.Log("Line [" + lineText + "] with first character index of " + firstCharacterIndex + " and length of " + length + " has been selected.");
+            Debug.Log("Line [" + lineText + "] with first character _paramIndex of " + firstCharacterIndex + " and length of " + length + " has been selected.");
         }
 
         void OnLinkSelection(string linkID, string linkText, int linkIndex)

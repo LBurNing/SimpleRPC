@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using Game;
+using Google.Protobuf;
 
 namespace UI
 {
@@ -18,10 +19,12 @@ namespace UI
 
         void Start()
         {
+            Debug.unityLogger.logEnabled = false;
             _connect.onClick.AddListener(OnConnect);
             _reqAttack.onClick.AddListener(OnReqAttack);
             _reqItem.onClick.AddListener(OnReqItem);
             _reqMove.onClick.AddListener(OnReqMove);
+            RPCMoudle.Register<Move>("OnMove", OnMove);
         }
 
         void Update()
@@ -33,6 +36,11 @@ namespace UI
         {
             Main.Socket.Connect(_ip.text, int.Parse(_port.text));
             GameFrame.myRole.Create(_user.text);
+        }
+
+        private void OnMove(Move move)
+        {
+            LogHelper.Log($"move sync: x:{move.X}, y:{move.Y}, speed:{move.Speed}, dir:{move.Dir}");
         }
 
         private void OnReqAttack()
@@ -69,7 +77,17 @@ namespace UI
 
         private void OnReqMove()
         {
-            RPCMoudle.Call("ReqMove", 12, 26);
+            Move move = new Move();
+            move.X = 10;
+            move.Y = 20;
+            move.Speed = 100;
+            move.Dir = 20;
+            RPCMoudle.Call("ReqMove", move);
+        }
+
+        private void OnDestroy()
+        {
+            RPCMoudle.Unregister("OnMove");
         }
     }
 }

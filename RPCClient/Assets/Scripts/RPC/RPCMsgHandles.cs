@@ -7,7 +7,6 @@ namespace Game
 {
     public class RPCMsgHandles
     {
-        #region 模拟客户端接收协议
         [Recv]
         private static void RecvAttack(int skillid, Attack attack, ItemList itemList)
         {
@@ -19,12 +18,5 @@ namespace Game
         {
             LogHelper.Log($"Recv: state = {msg}");
         }
-
-        [Recv]
-        private static void RecvMove(int x, int y)
-        {
-            LogHelper.Log($"RecvMove: x = {x}, y = {y}");
-        }
-        #endregion
     }
 }

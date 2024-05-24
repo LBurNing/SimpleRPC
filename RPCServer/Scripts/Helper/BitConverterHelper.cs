@@ -29,7 +29,7 @@ namespace Game
             if (_watch != null)
             {
                 _watch.Stop();
-                Console.WriteLine($"create stream interval time: {_watch.ElapsedMilliseconds / 1000.0f} s");
+                LogHelper.Log($"create stream interval time: {_watch.ElapsedMilliseconds / 1000.0f} s");
                 _watch.Restart();
             }
 

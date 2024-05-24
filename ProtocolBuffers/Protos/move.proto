@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message Move
+{
+  int32 x = 1;
+  int32 y = 2;
+  int32 speed = 3;
+  int32 dir = 4;
+}

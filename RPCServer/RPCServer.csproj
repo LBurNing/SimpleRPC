@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Scripts\新文件夹\**" />
+    <EmbeddedResource Remove="Scripts\新文件夹\**" />
+    <None Remove="Scripts\新文件夹\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.26.0" />
   </ItemGroup>
 

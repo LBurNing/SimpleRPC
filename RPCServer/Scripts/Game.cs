@@ -14,6 +14,7 @@ namespace Game
 
         public static void Init()
         {
+            RPC.Register<Move>("ReqMove", ReqMove);
             BitConverterHelper.Init();
             RPC.Init();
             gateway = new Gateway();
@@ -22,6 +23,13 @@ namespace Game
             Task.Run(Update);
             Console.ReadLine();
         }
+
+        private static void ReqMove(Role role, Move move)
+        {
+            LogHelper.Log($"Recv: Move, x = {move.X}, y = {move.Y}, 同步给所有客户端");
+            RPC.Call("OnMove", move);
+        }
+
 
         public static async Task Update()
         {
@@ -34,7 +42,7 @@ namespace Game
                 }
                 catch(Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    LogHelper.Log(ex.ToString());
                 }
             }
         }

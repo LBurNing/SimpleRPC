@@ -9,7 +9,7 @@ namespace Game
         [Recv]
         public static void ReqAttack(Role role, int skillId, string sklillDesc, float cd, Attack attack, double pubCd)
         {
-            Console.WriteLine($"Recv: skillId = {skillId}, sklillDesc = {sklillDesc}");
+            LogHelper.Log($"Recv: skillId = {skillId}, sklillDesc = {sklillDesc}");
             ItemList itemList = new ItemList();
             for (int i = 0; i < 100; i++)
             {
@@ -34,15 +34,8 @@ namespace Game
         [Recv]
         public static void ReqDelete(Role role, ItemList itemList)
         {
-            Console.WriteLine($"Recv: ItemList.Len = {itemList.Items.Count}");
+            LogHelper.Log($"Recv: ItemList.Len = {itemList.Items.Count}");
             RPC.Call(role, "RecvDelete", 0);
-        }
-
-        [Recv]
-        public static void ReqMove(Role role, int x, int y)
-        {
-            Console.WriteLine($"Recv: Move, x = {x}, y = {y}, 同步给所有客户端");
-            RPC.Call("RecvMove", x, y);
         }
     }
 }
