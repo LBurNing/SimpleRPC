@@ -14,9 +14,9 @@ namespace Game
 
         public static void Init()
         {
-            RPC.Register<Move>("ReqMove", ReqMove);
+            RPCMouble.Register<Move>("ReqMove", ReqMove);
             BitConverterHelper.Init();
-            RPC.Init();
+            RPCMouble.Init();
             gateway = new Gateway();
             gateway.RunServer();
 
@@ -27,7 +27,7 @@ namespace Game
         private static void ReqMove(Role role, Move move)
         {
             LogHelper.Log($"Recv: Move, x = {move.X}, y = {move.Y}, 同步给所有客户端");
-            RPC.Call("OnMove", move);
+            RPCMouble.Call("OnMove", move);
         }
 
 

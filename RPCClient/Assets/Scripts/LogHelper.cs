@@ -12,6 +12,9 @@ namespace Game
 
         public static void Log(string log)
         {
+            if (!Debug.unityLogger.logEnabled)
+                return;
+
             _log.AppendLine($"{DateTime.Now.ToString()} D: {log}");
             Debug.Log(log);
         }

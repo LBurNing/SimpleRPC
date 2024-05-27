@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 using Game;
 using Google.Protobuf;
+using UnityEngine.Profiling;
 
 namespace UI
 {
@@ -19,12 +20,11 @@ namespace UI
 
         void Start()
         {
-            Debug.unityLogger.logEnabled = false;
             _connect.onClick.AddListener(OnConnect);
             _reqAttack.onClick.AddListener(OnReqAttack);
             _reqItem.onClick.AddListener(OnReqItem);
             _reqMove.onClick.AddListener(OnReqMove);
-            RPCMoudle.Register<Move>("OnMove", OnMove);
+            RPCMoudle.Register<Move>(RPCMsgDefine.REQ_MOVE, OnMove);
         }
 
         void Update()
@@ -77,17 +77,34 @@ namespace UI
 
         private void OnReqMove()
         {
-            Move move = new Move();
-            move.X = 10;
-            move.Y = 20;
-            move.Speed = 100;
-            move.Dir = 20;
-            RPCMoudle.Call("ReqMove", move);
+            Profiler.BeginSample("ReqMove");
+            for (int i = 0; i < 10; i++)
+            {
+                Move move = new Move();
+                move.X = 10;
+                move.Y = 20;
+                move.Speed = 100;
+                move.Dir = 20;
+                RPCMoudle.Call("ReqMove", move);
+            }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("ReqReflectMove");
+            for (int i = 0; i < 10; i++)
+            {
+                Move move = new Move();
+                move.X = 10;
+                move.Y = 20;
+                move.Speed = 100;
+                move.Dir = 20;
+                RPCMoudle.Call("ReqReflectMove", new object[] { move });
+            }
+            Profiler.EndSample();
         }
 
         private void OnDestroy()
         {
-            RPCMoudle.Unregister("OnMove");
+            RPCMoudle.Unregister(RPCMsgDefine.REQ_MOVE);
         }
     }
 }

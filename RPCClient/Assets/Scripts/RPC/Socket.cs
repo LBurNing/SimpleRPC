@@ -107,7 +107,7 @@ namespace Game
 
         private async UniTask SendThread()
         {
-            await UniTask.SwitchToTaskPool();
+            await UniTask.SwitchToThreadPool();
             while (_socketState == SocketState.Connected)
             {
                 while (true)
@@ -146,7 +146,7 @@ namespace Game
 
         private async UniTask RecvThread()
         {
-            await UniTask.SwitchToTaskPool();
+            await UniTask.SwitchToThreadPool();
             while (_socketState == SocketState.Connected)
             {
                 try

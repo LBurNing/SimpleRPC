@@ -16,6 +16,11 @@ namespace Game
 
         private void Awake()
         {
+#if UNITY_EDITOR
+            UnityEngine.Debug.unityLogger.logEnabled = true;
+#else
+            UnityEngine.Debug.unityLogger.logEnabled = false;
+#endif
             _instance = this;
             DontDestroyOnLoad(this);
             GameFrame.Init();

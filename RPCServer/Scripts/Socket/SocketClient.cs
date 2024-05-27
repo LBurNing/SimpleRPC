@@ -35,7 +35,7 @@ namespace Game
                 if (_receiveMsgs.Count > 0)
                 {
                     BuffMessage msg = _receiveMsgs.Dequeue();
-                    RPC.OnRPC(msg);
+                    RPCMouble.OnRPC(msg);
                 }
             }
         }

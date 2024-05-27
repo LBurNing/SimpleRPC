@@ -13,14 +13,9 @@ using System.Runtime.InteropServices.ComTypes;
 
 namespace Game
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class RecvAttribute : Attribute
+    public sealed class RPCMoudle
     {
-    }
-
-    class RPCMoudle
-    {
-        private static Dictionary<int, IRPCMethod> _msg = new Dictionary<int, IRPCMethod>();
+        private static Dictionary<int, IRPC> _msg = new Dictionary<int, IRPC>();
 
         public static void Init()
         {
@@ -28,10 +23,7 @@ namespace Game
             MethodInfo[] methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic);
             foreach (MethodInfo methodInfo in methods)
             {
-                if (!methodInfo.IsDefined(typeof(RecvAttribute)))
-                    continue;
-
-                RPCMethod method = new RPCMethod(methodInfo);
+                RPC method = new RPC(methodInfo);
                 int index = 0;
                 ParameterInfo[] infos = methodInfo.GetParameters();
                 foreach (var info in infos)
@@ -62,7 +54,7 @@ namespace Game
         public static void Register<T>(string methodName, Action<T> action) where T : class, IMessage, new()
         {
             int id = Globals.Hash(methodName);
-            RPCStaticMethod<T> method = new RPCStaticMethod<T>();
+            RPCStatic<T> method = new RPCStatic<T>();
             method.Register(action, new T());
 
             if (_msg.ContainsKey(id))
@@ -117,7 +109,7 @@ namespace Game
             {
                 Profiler.BeginSample("rpc call");
                 int hash = Globals.Hash(id);
-                BuffMessage msg = PackAll(hash, args);
+                BuffMessage msg = Encode(hash, args);
                 Main.Socket.Send(msg);
                 Profiler.EndSample();
             }
@@ -135,10 +127,10 @@ namespace Game
                 return;
             }
 
-            UnPack(msg.bytes);
+            Decode(msg.bytes);
         }
 
-        public static void UnPack(byte[] buffer)
+        private static void Decode(byte[] buffer)
         {
             if (buffer == null || buffer.Length < sizeof(int))
             {
@@ -147,7 +139,7 @@ namespace Game
             }
 
             int protoId = BitConverter.ToInt32(buffer, 0);
-            if (!_msg.TryGetValue(protoId, out IRPCMethod method))
+            if (!_msg.TryGetValue(protoId, out IRPC method))
             {
                 LogHelper.LogError($"Method not found for protoId: {protoId}");
                 return;
@@ -157,7 +149,7 @@ namespace Game
             try
             {
                 Array.Copy(buffer, sizeof(int), buffMessage.bytes, 0, buffer.Length - sizeof(int));
-                method.Invoke(buffMessage.bytes);
+                method.Decode(buffMessage.bytes);
             }
             catch (Exception ex)
             {
@@ -204,7 +196,7 @@ namespace Game
             return DateType.Empty;
         }
 
-        private static BuffMessage PackAll(int id, params object[] args)
+        private static BuffMessage Encode(int id, params object[] args)
         {
             int offset = 0;
             BuffMessage msg = GameFrame.message.GetBuffMessage();
