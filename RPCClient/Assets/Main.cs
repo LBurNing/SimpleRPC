@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Sockets;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -11,8 +12,11 @@ namespace Game
     public class Main : MonoBehaviour
     {
         private static Main _instance;
-        private Socket _socket;
-        public static Socket Socket { get { return _instance._socket; } }
+        private Tcp _tcp;
+        private Udp _udp;
+        public static Main Instance {  get { return _instance; } }
+        public static Tcp Tcp { get { return _instance._tcp; } }
+        public static Udp Udp { get { return _instance._udp; } }
 
         private void Awake()
         {
@@ -38,18 +42,33 @@ namespace Game
 
         private void Update()
         {
-            _socket?.Update();
+            _tcp?.Update();
+            _udp?.Update();
             GameFrame.UpdateMoudle();
         }
 
         private void InitManager()
         {
-            _socket = new Socket();
+            _tcp = new Tcp();
+            _udp = new Udp();
+        }
+
+        public void Send(BuffMessage message, ProtocolType type = ProtocolType.Tcp)
+        {
+            if (type == ProtocolType.Tcp)
+            {
+                _tcp.Send(message);
+            }
+            else if (type == ProtocolType.Udp)
+            {
+                _udp.Send(message);
+            }
         }
 
         public void OnDestroy()
         {
-            Socket?.Dispose();
+            _tcp?.Dispose();
+            _udp?.Dispose();
             GameFrame.UnInitMoudle();
         }
     }

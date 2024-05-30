@@ -1,0 +1,159 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Game
+{
+    class Udp : IDisposable
+    {
+        private const int BUFFER_SIZE = 100 * 1024;
+        private Queue<BuffMessage> _sendMsgs;
+        private Queue<BuffMessage> _receiveMsgs;
+        private ObjectFactory<BuffMessage> _msg;
+        private byte[] _recvBuff;
+        private int _recvOffset;
+        private UdpClient _client;
+
+        public Udp(UdpClient client)
+        {
+            this._client = client;
+            _sendMsgs = new Queue<BuffMessage>();
+            _receiveMsgs = new Queue<BuffMessage>();
+            _msg = new ObjectFactory<BuffMessage>();
+            _recvBuff = new byte[BUFFER_SIZE];
+            Task.Run(() => SendThread());
+            Task.Run(() => RecvThread());
+        }
+
+        public void Update()
+        {
+            lock (_receiveMsgs)
+            {
+                if (_receiveMsgs.Count > 0)
+                {
+                    BuffMessage msg = _receiveMsgs.Dequeue();
+                    RPCMouble.OnRPC(msg);
+                }
+            }
+        }
+
+        private async Task SendThread()
+        {
+            try
+            {
+                while (true)
+                {
+                    lock (_sendMsgs)
+                    {
+                        if (_sendMsgs.Count == 0)
+                            continue;
+                    }
+
+                    try
+                    {
+                        LogHelper.Log("send thread ID: {0}", Thread.CurrentThread.ManagedThreadId);
+                        BuffMessage msg = _sendMsgs.Dequeue();
+                        int length = _client.Send(msg.bytes, msg.length);
+                        LogHelper.Log($"数据发送完成: {length}");
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+                        LogHelper.Log(ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogHelper.Log(ex);
+                    }
+
+                    await Task.Delay(1);
+                }
+            }
+            catch
+            {
+                _client?.Close();
+            }
+        }
+
+        private async Task RecvThread()
+        {
+            try
+            {
+                while (true)
+                {
+                    try
+                    {
+                        int length = _client.Client.Receive(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset, SocketFlags.None);
+                        if (length == 0)
+                            continue;
+
+                        LogHelper.Log("recv thread ID: {0}", Thread.CurrentThread.ManagedThreadId);
+                        _recvOffset += length;
+                        int offset = 0;
+                        while (true)
+                        {
+                            if (_recvOffset - offset < sizeof(int))
+                                // 没有足够的数据读取下一个消息的长度
+                                break;
+
+                            int dataLength = BitConverter.ToInt32(_recvBuff, offset);
+                            if (_recvOffset - offset < dataLength + sizeof(int))
+                                // 没有足够的数据读取完整的消息
+                                break;
+
+                            // 读取完整消息
+                            BuffMessage msg = _msg.Get();
+                            Buffer.BlockCopy(_recvBuff, offset + sizeof(int), msg.bytes, 0, dataLength);
+
+                            lock (_receiveMsgs)
+                                _receiveMsgs.Enqueue(msg);
+
+                            // 移动偏移量到下一个消息
+                            offset += sizeof(int) + dataLength;
+                        }
+
+                        // 将未处理的数据移到缓冲区开头
+                        if (offset > 0)
+                            Buffer.BlockCopy(_recvBuff, offset, _recvBuff, 0, _recvOffset - offset);
+
+                        _recvOffset -= offset;
+                    }
+                    catch (Exception ex)
+                    {
+                        LogHelper.Log($"Failed to receive {ex.Message}");
+                    }
+
+                    await Task.Delay(1);
+                }
+            }
+            catch
+            {
+                _client?.Close();
+            }
+
+        }
+
+        public void Send(BuffMessage message)
+        {
+            if (message.length > 0)
+            {
+                lock (_sendMsgs)
+                    _sendMsgs.Enqueue(message);
+            }
+            else
+            {
+                _msg.Put(message);
+            }
+        }
+
+        public void Dispose()
+        {
+            _client?.Dispose();
+            _sendMsgs?.Clear();
+            _receiveMsgs?.Clear();
+            _msg?.Clear();
+        }
+    }
+}

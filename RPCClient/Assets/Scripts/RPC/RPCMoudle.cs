@@ -10,6 +10,8 @@ using UnityEngine.Profiling;
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices.ComTypes;
+using System.Net.Sockets;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Game
 {
@@ -19,7 +21,7 @@ namespace Game
 
         public static void Init()
         {
-            Type type = typeof(RPCMsgHandles);
+            System.Type type = typeof(RPCMsgHandles);
             MethodInfo[] methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic);
             foreach (MethodInfo methodInfo in methods)
             {
@@ -78,13 +80,34 @@ namespace Game
             }
         }
 
-        public static void Call(string methodName, IMessage message)
+        public static void TcpCall(string methodName, IMessage message)
+        {
+            Call(methodName, message, ProtocolType.Tcp);
+        }
+
+        public static void UdpCall(string methodName, IMessage message)
+        {
+            Call(methodName, message, ProtocolType.Udp);
+        }
+
+        public static void TcpCall(string methodName, params object[] args)
+        {
+            Call(methodName, ProtocolType.Tcp, args);
+        }
+
+        public static void UdpCall(string methodName, params object[] args)
+        {
+            Call(methodName, ProtocolType.Udp, args);
+        }
+
+        private static void Call(string methodName, IMessage message, ProtocolType type = ProtocolType.Tcp)
         {
             if (message == null) 
                 return;
 
             try
             {
+
                 int id = Globals.Hash(methodName);
                 int offset = 0;
                 BuffMessage msg = GameFrame.message.GetBuffMessage();
@@ -95,7 +118,7 @@ namespace Game
                 BitConverterHelper.WriteMessage(msg.bytes, ref offset, message);
 
                 msg.length = offset;
-                Main.Socket?.Send(msg);
+                Main.Instance.Send(msg, type);
             }
             catch(Exception ex)
             {
@@ -103,14 +126,46 @@ namespace Game
             }
         }
 
-        public static void Call(string id, params object[] args)
+        private static void CallAny(string methodName, IMessage message, ProtocolType type = ProtocolType.Tcp)
+        {
+            if (message == null)
+                return;
+
+            try
+            {
+
+                int id = Globals.Hash(methodName);
+                int offset = 0;
+                BuffMessage msg = GameFrame.message.GetBuffMessage();
+                BitConverter.TryWriteBytes(msg.bytes.AsSpan(offset), id);
+                offset += sizeof(int);
+                BitConverterHelper.WriteString(msg.bytes, ref offset, GameFrame.myRole.Id);
+
+                RPCMsg rPCMsg = new RPCMsg();
+                rPCMsg.Data = Any.Pack(message);
+                rPCMsg.Data.Unpack<Attack>();
+
+                BitConverterHelper.WriteMessage(msg.bytes, ref offset, rPCMsg);
+
+                msg.length = offset;
+                Main.Instance.Send(msg, type);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogError(ex.ToString());
+            }
+        }
+
+
+
+        private static void Call(string id, ProtocolType type, params object[] args)
         {
             try
             {
                 Profiler.BeginSample("rpc call");
                 int hash = Globals.Hash(id);
                 BuffMessage msg = Encode(hash, args);
-                Main.Socket.Send(msg);
+                Main.Instance.Send(msg, type);
                 Profiler.EndSample();
             }
             catch(Exception ex)
@@ -162,7 +217,7 @@ namespace Game
         }
 
 
-        private static DateType GetDateType(Type type)
+        private static DateType GetDateType(System.Type type)
         {
             if (type == typeof(IMessage))
                 return DateType.Message;
@@ -208,7 +263,7 @@ namespace Game
             {
                 try
                 {
-                    Type type = arg.GetType();
+                    System.Type type = arg.GetType();
                     switch (arg)
                     {
                         case IMessage:

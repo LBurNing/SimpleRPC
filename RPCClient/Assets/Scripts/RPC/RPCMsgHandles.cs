@@ -21,6 +21,11 @@ namespace Game
             LogHelper.Log($"Recv: skillid = {attack.Id}, targetId = {attack.TargetId}, itemList.Count = {itemList.Items.Count}");
         }
 
+        private static void RecvUdp(int index)
+        {
+            LogHelper.Log($"Recv: udp test = {index}");
+        }
+
         private static void RecvDelete(int msg)
         {
             LogHelper.Log($"Recv: state = {msg}");

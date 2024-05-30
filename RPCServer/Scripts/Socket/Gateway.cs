@@ -13,6 +13,7 @@ namespace Game
     public class Gateway
     {
         private TcpListener? _listener;
+        private UdpClient _udp;
         private Dictionary<string, Role> _roles;
 
         public Gateway()
@@ -26,13 +27,14 @@ namespace Game
             {
                 client.Value.Update();
 
-                if (!client.Value.Connect)
+                if (!client.Value.TcpConnect)
                     _roles.Remove(client.Key);
             }
         }
 
         public async void RunServer()
         {
+            _udp = new UdpClient(new IPEndPoint(IPAddress.Any, 8888));
             _listener = new TcpListener(IPAddress.Any, 8888);
             _listener.Start();
             LogHelper.Log("Server started...");
@@ -59,7 +61,7 @@ namespace Game
                 if(_roles.TryGetValue(id, out role))
                     role.Dispose();
 
-                role = new Role(id, client);
+                role = new Role(id, client, _udp);
                 _roles[id] = role;
                 LogHelper.Log($"{id} Client connected...");
                 break;

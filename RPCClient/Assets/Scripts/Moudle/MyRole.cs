@@ -27,7 +27,7 @@ namespace Game
             byte[] bytes = Encoding.UTF8.GetBytes(Id);
             bytes.CopyTo(buffMessage.bytes, 0);
             buffMessage.length = bytes.Length;
-            Main.Socket.Send(buffMessage);
+            Main.Tcp.Send(buffMessage);
         }
 
         public void Init()

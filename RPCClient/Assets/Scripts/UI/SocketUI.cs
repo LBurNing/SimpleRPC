@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using Game;
 using Google.Protobuf;
 using UnityEngine.Profiling;
-
+using Google.Protobuf.WellKnownTypes;
 namespace UI
 {
     public class SocketUI : MonoBehaviour
@@ -21,7 +21,7 @@ namespace UI
         void Start()
         {
             _connect.onClick.AddListener(OnConnect);
-            _reqAttack.onClick.AddListener(OnReqAttack);
+            _reqAttack.onClick.AddListener(OnReqUdp);
             _reqItem.onClick.AddListener(OnReqItem);
             _reqMove.onClick.AddListener(OnReqMove);
             RPCMoudle.Register<Move>(RPCMsgDefine.REQ_MOVE, OnMove);
@@ -34,7 +34,8 @@ namespace UI
 
         private void OnConnect()
         {
-            Main.Socket.Connect(_ip.text, int.Parse(_port.text));
+            Main.Tcp.Connect(_ip.text, int.Parse(_port.text));
+            Main.Udp.Connect(_ip.text, int.Parse(_port.text));
             GameFrame.myRole.Create(_user.text);
         }
 
@@ -43,12 +44,20 @@ namespace UI
             LogHelper.Log($"move sync: x:{move.X}, y:{move.Y}, speed:{move.Speed}, dir:{move.Dir}");
         }
 
+        private void OnReqUdp()
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                RPCMoudle.UdpCall("ReqUdp", i);
+            }
+        }
+
         private void OnReqAttack()
         {
             Attack attack = new Attack();
             attack.Id = 10;
             attack.TargetId = 1001;
-            RPCMoudle.Call("ReqAttack", 125, "À×öªÍòÀ¤", 5.21f, attack, 10.2563);
+            RPCMoudle.UdpCall("ReqAttack", 125, "À×öªÍòÀ¤", 5.21f, attack, 10.2563);
         }
 
         private void OnReqItem()
@@ -72,7 +81,7 @@ namespace UI
                 itemList.ItemBinds.Add(itemBind);
             }
 
-            RPCMoudle.Call("ReqDelete", itemList);
+            RPCMoudle.TcpCall("ReqDelete", itemList);
         }
 
         private void OnReqMove()
@@ -85,7 +94,7 @@ namespace UI
                 move.Y = 20;
                 move.Speed = 100;
                 move.Dir = 20;
-                RPCMoudle.Call("ReqMove", move);
+                RPCMoudle.TcpCall("ReqMove", move);
             }
             Profiler.EndSample();
 
@@ -97,7 +106,7 @@ namespace UI
                 move.Y = 20;
                 move.Speed = 100;
                 move.Dir = 20;
-                RPCMoudle.Call("ReqReflectMove", new object[] { move });
+                RPCMoudle.TcpCall("ReqReflectMove", new object[] { move });
             }
             Profiler.EndSample();
         }

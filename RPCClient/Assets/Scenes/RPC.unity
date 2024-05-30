@@ -389,6 +389,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 217062779, guid: 21590a5f39bc61c4285b1b2f73fd0f7d, type: 3}
+      propertyPath: m_text
+      value: "Udp\u8BF7\u6C42\u653B\u51FB"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1920138407, guid: 21590a5f39bc61c4285b1b2f73fd0f7d, type: 3}
+      propertyPath: m_Name
+      value: ReqAttack
+      objectReference: {fileID: 0}
     - target: {fileID: 1920138408, guid: 21590a5f39bc61c4285b1b2f73fd0f7d, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
