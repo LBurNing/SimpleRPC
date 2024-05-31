@@ -17,7 +17,7 @@ namespace Game
                 builder.AppendLine($"{DateTime.Now.ToString()} D: {s.ToString()}");
             }
 
-            Console.WriteLine(builder.ToString());
+            Console.Write(builder.ToString());
         }
 
         public static void LogError(params object[] log)
@@ -28,7 +28,7 @@ namespace Game
                 builder.AppendLine($"E: <color=#ff0000>{s.ToString()}</color>");
             }
 
-            Console.WriteLine(builder.ToString());
+            Console.Write(builder.ToString());
         }
 
         public static void LogWarning(params object[] log)
@@ -39,7 +39,7 @@ namespace Game
                 builder.AppendLine($"w: <color=#FFFF00>{s.ToString()}</color>");
             }
 
-            Console.WriteLine(builder.ToString());
+            Console.Write(builder.ToString());
         }
 
         public static string LogInfo {  get { return _log.ToString(); } }

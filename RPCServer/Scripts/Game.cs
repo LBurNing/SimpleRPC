@@ -27,9 +27,8 @@ namespace Game
         private static void ReqMove(Role role, Move move)
         {
             LogHelper.Log($"Recv: Move, x = {move.X}, y = {move.Y}, 同步给所有客户端");
-            RPCMouble.TcpCall("OnMove", move);
+            RPCMouble.Call("OnMove", move);
         }
-
 
         public static async Task Update()
         {

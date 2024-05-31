@@ -87,54 +87,14 @@ namespace Game
                 _objectFactory.Put(msg);
         }
 
-        public static void TcpCall(Role role, string methodName, params object[] args)
-        {
-            Call(role, ProtocolType.Tcp, methodName, args);
-        }
-
-        public static void TcpCall(Role role, string methodName, IMessage message)
-        {
-            Call(role, ProtocolType.Tcp, methodName, message);
-        }
-
-        public static void TcpCall(string methodName, IMessage message)
-        {
-            Call(ProtocolType.Tcp, methodName, message);
-        }
-
-        public static void TcpCall(string methodName, params object[] args)
-        {
-            Call(ProtocolType.Tcp, methodName, args);
-        }
-
-        public static void UdpCall(Role role, string methodName, params object[] args)
-        {
-            Call(role, ProtocolType.Udp, methodName, args);
-        }
-
-        public static void UdpCall(Role role, string methodName, IMessage message)
-        {
-            Call(role, ProtocolType.Udp, methodName, message);
-        }
-
-        public static void UdpCall(string methodName, IMessage message)
-        {
-            Call(ProtocolType.Udp, methodName, message);
-        }
-
-        public static void UdpCall(string methodName, params object[] args)
-        {
-            Call(ProtocolType.Udp, methodName, args);
-        }
-
-        private static void Call(Role role, ProtocolType type, string methodName, params object[] args)
+        public static void Call(Role role, string methodName, params object[] args)
         {
             int hash = Globals.Hash(methodName);
             BuffMessage msg = PackAll(hash, args);
             role.Send(msg);
         }
 
-        private static void Call(Role role, string methodName, IMessage message)
+        public static void Call(Role role, string methodName, IMessage message)
         {
             if (message == null)
                 return;
@@ -161,7 +121,7 @@ namespace Game
             }
         }
 
-        private static void Call(ProtocolType type, string methodName, IMessage message)
+        public static void Call(string methodName, IMessage message)
         {
             if (message == null)
                 return;
@@ -188,7 +148,7 @@ namespace Game
             }
         }
 
-        private static void Call(ProtocolType type, string methodName, params object[] args)
+        public static void Call(string methodName, params object[] args)
         {
             int hash = Globals.Hash(methodName);
             BuffMessage msg = PackAll(hash, args);
@@ -347,6 +307,11 @@ namespace Game
         private const int MAX_BUFF_SIZE = 8 * 1024;
         public byte[] bytes = new byte[MAX_BUFF_SIZE];
         public int length = 0;
+
+        public int TimeoutMillisecond
+        {
+            get { return length; }
+        }
 
         public void Reset()
         {

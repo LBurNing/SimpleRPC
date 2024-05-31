@@ -21,7 +21,7 @@ namespace UI
         void Start()
         {
             _connect.onClick.AddListener(OnConnect);
-            _reqAttack.onClick.AddListener(OnReqUdp);
+            _reqAttack.onClick.AddListener(OnReqAttack);
             _reqItem.onClick.AddListener(OnReqItem);
             _reqMove.onClick.AddListener(OnReqMove);
             RPCMoudle.Register<Move>(RPCMsgDefine.REQ_MOVE, OnMove);
@@ -41,14 +41,6 @@ namespace UI
         private void OnMove(Move move)
         {
             LogHelper.Log($"move sync: x:{move.X}, y:{move.Y}, speed:{move.Speed}, dir:{move.Dir}");
-        }
-
-        private void OnReqUdp()
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                RPCMoudle.Call("ReqUdp", i);
-            }
         }
 
         private void OnReqAttack()

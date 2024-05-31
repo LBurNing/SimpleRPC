@@ -6,6 +6,9 @@ using System.Net.Sockets;
 using System;
 using System.Threading;
 using UnityEngine.Profiling;
+using System.IO;
+using Unity.VisualScripting;
+using System.Collections.Concurrent;
 
 namespace Game
 {
@@ -22,14 +25,17 @@ namespace Game
 
     public class Tcp
     {
-        private Queue<BuffMessage> _sendMsgs;
-        private Queue<BuffMessage> _receiveMsgs;
+        private ConcurrentQueue<BuffMessage> _sendMsgs;
+        private ConcurrentQueue<BuffMessage> _receiveMsgs;
         private TcpClient _tcpClient;
 
         private SocketState _socketState;
         private byte[] _recvBuff;
         private int _recvOffset;
         private int _delay = 10;
+        private CancellationTokenSource _recvCancel;
+        private CancellationTokenSource _sendCancelToken;
+
         public SocketState State { get { return _socketState; } }
         public string IP { get; set; }
         public int Port { get; set; }
@@ -41,23 +47,25 @@ namespace Game
 
         public Tcp()
         {
-            _sendMsgs = new Queue<BuffMessage>();
-            _receiveMsgs = new Queue<BuffMessage>();
-            _tcpClient = new TcpClient();
+            _sendMsgs = new ConcurrentQueue<BuffMessage>();
+            _receiveMsgs = new ConcurrentQueue<BuffMessage>();
             _recvBuff = new byte[Globals.BUFFER_SIZE];
+        }
+
+        private void InitTcpClient()
+        {
+            _tcpClient = new TcpClient();
+            _recvCancel = new CancellationTokenSource();
+            _sendCancelToken = new CancellationTokenSource();
         }
 
         public void Update()
         {
             Profiler.BeginSample("on tcp rpc");
-            lock (_receiveMsgs)
+            if (_receiveMsgs.TryDequeue(out BuffMessage msg))
             {
-                if (_receiveMsgs.Count > 0)
-                {
-                    BuffMessage msg = _receiveMsgs.Dequeue();
-                    RPCMoudle.OnRPC(msg);
-                    GameFrame.message.PutBuffMessage(msg);
-                }
+                RPCMoudle.OnRPC(msg);
+                GameFrame.message.PutBuffMessage(msg);
             }
             Profiler.EndSample();
         }
@@ -74,6 +82,7 @@ namespace Game
             try
             {
                 Close();
+                InitTcpClient();
                 SetSocketState(SocketState.Connecting);
                 await _tcpClient.ConnectAsync(IP, Port);
                 OnConnect();
@@ -92,8 +101,7 @@ namespace Game
                 {
                     LogHelper.Log("connected...");
                     SetSocketState(SocketState.Connected);
-                    _ = UniTask.Create(() => SendThread());
-                    _ = UniTask.Create(() => RecvThread());
+                    StartAsyncTasks();
                 }
                 else
                 {
@@ -107,6 +115,12 @@ namespace Game
             }
         }
 
+        private void StartAsyncTasks()
+        {
+            _ = SendThread();
+            _ = RecvThread();
+        }
+
         private async UniTask SendThread()
         {
             await UniTask.SwitchToThreadPool();
@@ -114,27 +128,40 @@ namespace Game
             {
                 while (true)
                 {
-                    lock (_sendMsgs)
-                    {
-                        if (_sendMsgs.Count == 0)
-                            break;
-                    }
+                    if (!_sendMsgs.TryDequeue(out BuffMessage msg))
+                        break;
+
+                    var timeoutToken = new CancellationTokenSource();
+                    timeoutToken.CancelAfterSlim(TimeSpan.FromMilliseconds(msg.TimeoutMillisecond));
+                    var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_sendCancelToken.Token, timeoutToken.Token);
 
                     try
                     {
-                        BuffMessage msg = _sendMsgs.Dequeue();
-                        await Stream.WriteAsync(msg.bytes, 0, msg.length);
+                        await Stream.WriteAsync(msg.bytes, 0, msg.length, linkedCts.Token);
                         LogHelper.Log($"发送完成: {msg.length} byte");
                         GameFrame.message.PutBuffMessage(msg);
                     }
                     catch (OperationCanceledException ex)
                     {
-                        LogHelper.LogError("Time out: " + ex.Message);
+                        if (timeoutToken.IsCancellationRequested)
+                        {
+                            _sendMsgs.Enqueue(msg);
+                            LogHelper.LogWarning("消息发送超时, 添加到队列末尾, 等待发送...");
+                            await UniTask.Delay(10);
+                            continue;
+                        }
+
+                        LogHelper.LogWarning("发送操作被终止..." + ex.Message);
+                        break;
+                    }
+                    catch (IOException ex) when (ex.InnerException is SocketException socketEx && socketEx.SocketErrorCode == SocketError.ConnectionAborted)
+                    {
+                        LogHelper.Log("发送操作被终止...");
+                        break;
                     }
                     catch (Exception ex)
                     {
-                        Close();
-                        LogHelper.LogError(ex.Message);
+                        LogHelper.LogError("发送错误: " + ex.Message);
                         break;
                     }
                 }
@@ -150,7 +177,7 @@ namespace Game
             {
                 try
                 {
-                    int length = await Stream.ReadAsync(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset);
+                    int length = await Stream.ReadAsync(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset, _recvCancel.Token);
                     if (length == 0)
                     {
                         LogHelper.Log("connect failed...");
@@ -165,7 +192,6 @@ namespace Game
                             // 没有足够的数据读取下一个消息的长度
                             break;
 
-
                         int dataLength = BitConverter.ToInt32(_recvBuff, offset);
                         if (_recvOffset - offset < dataLength + sizeof(int))
                             // 没有足够的数据读取完整的消息
@@ -174,9 +200,7 @@ namespace Game
                         // 读取完整消息
                         BuffMessage msg = GameFrame.message.GetBuffMessage();
                         Buffer.BlockCopy(_recvBuff, offset + sizeof(int), msg.bytes, 0, dataLength);
-
-                        lock (_receiveMsgs)
-                            _receiveMsgs.Enqueue(msg);
+                        _receiveMsgs.Enqueue(msg);
 
                         // 移动偏移量到下一个消息
                         offset += sizeof(int) + dataLength;
@@ -188,10 +212,19 @@ namespace Game
 
                     _recvOffset -= offset;
                 }
+                catch(OperationCanceledException ex)
+                {
+                    LogHelper.Log("读取操作被终止: " + ex.Message);
+                    break;
+                }
+                catch (IOException ex) when (ex.InnerException is SocketException socketEx && socketEx.SocketErrorCode == SocketError.OperationAborted)
+                {
+                    LogHelper.Log("读取操作被终止...");
+                    break;
+                }
                 catch (Exception ex)
                 {
-                    Close();
-                    LogHelper.LogError(ex.ToString());
+                    LogHelper.LogError("读取错误: " + ex.ToString());
                     break;
                 }
 
@@ -212,9 +245,7 @@ namespace Game
                 Buffer.BlockCopy(message.bytes, 0, message.bytes, headLength, message.length);
                 BitConverter.TryWriteBytes(message.bytes.AsSpan(0), message.length);
                 message.length += headLength;
-
-                lock (_sendMsgs)
-                    _sendMsgs.Enqueue(message);
+                _sendMsgs.Enqueue(message);
             }
             else
             {
@@ -231,7 +262,9 @@ namespace Game
             {
                 if (_tcpClient.Connected)
                 {
-                    _tcpClient.Dispose();
+                    _recvCancel.Dispose();
+                    _sendCancelToken.Dispose();
+                    _tcpClient.Close();
                     SetSocketState(SocketState.Close);
                 }
             }
@@ -244,9 +277,25 @@ namespace Game
         public void Dispose()
         {
             Close();
-            _tcpClient = null;
-            _sendMsgs = null;
-            _receiveMsgs = null;
+        
+            if (_tcpClient != null)
+            {
+                _tcpClient.Dispose();
+                _tcpClient = null;
+            }
+
+            if (_sendMsgs != null)
+            {
+                _sendMsgs.Clear();
+                _sendMsgs = null;
+            }
+
+            if (_receiveMsgs != null)
+            {
+                _receiveMsgs.Clear();
+                _receiveMsgs = null;
+            }
+
             SetSocketState(SocketState.Dispose);
         }
     }

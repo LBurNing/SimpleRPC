@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace Game
         public static Main Instance {  get { return _instance; } }
         public static Tcp Tcp { get { return _instance._tcp; } }
 
-        private void Awake()
+        private async void Awake()
         {
 #if UNITY_EDITOR
             UnityEngine.Debug.unityLogger.logEnabled = true;
@@ -43,6 +44,7 @@ namespace Game
             _tcp?.Update();
             GameFrame.UpdateMoudle();
         }
+
 
         private void InitManager()
         {

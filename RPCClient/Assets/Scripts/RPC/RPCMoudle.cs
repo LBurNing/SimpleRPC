@@ -278,8 +278,12 @@ namespace Game
     public class BuffMessage : IObject
     {
         public byte[] bytes = new byte[Globals.DATA_SZIE];
-
         public int length = 0;
+
+        public int TimeoutMillisecond
+        {
+            get { return length; }
+        }
 
         public void Reset()
         {
