@@ -80,27 +80,7 @@ namespace Game
             }
         }
 
-        public static void TcpCall(string methodName, IMessage message)
-        {
-            Call(methodName, message, ProtocolType.Tcp);
-        }
-
-        public static void UdpCall(string methodName, IMessage message)
-        {
-            Call(methodName, message, ProtocolType.Udp);
-        }
-
-        public static void TcpCall(string methodName, params object[] args)
-        {
-            Call(methodName, ProtocolType.Tcp, args);
-        }
-
-        public static void UdpCall(string methodName, params object[] args)
-        {
-            Call(methodName, ProtocolType.Udp, args);
-        }
-
-        private static void Call(string methodName, IMessage message, ProtocolType type = ProtocolType.Tcp)
+        public static void Call(string methodName, IMessage message)
         {
             if (message == null) 
                 return;
@@ -118,7 +98,7 @@ namespace Game
                 BitConverterHelper.WriteMessage(msg.bytes, ref offset, message);
 
                 msg.length = offset;
-                Main.Instance.Send(msg, type);
+                Main.Instance.Send(msg);
             }
             catch(Exception ex)
             {
@@ -126,46 +106,14 @@ namespace Game
             }
         }
 
-        private static void CallAny(string methodName, IMessage message, ProtocolType type = ProtocolType.Tcp)
-        {
-            if (message == null)
-                return;
-
-            try
-            {
-
-                int id = Globals.Hash(methodName);
-                int offset = 0;
-                BuffMessage msg = GameFrame.message.GetBuffMessage();
-                BitConverter.TryWriteBytes(msg.bytes.AsSpan(offset), id);
-                offset += sizeof(int);
-                BitConverterHelper.WriteString(msg.bytes, ref offset, GameFrame.myRole.Id);
-
-                RPCMsg rPCMsg = new RPCMsg();
-                rPCMsg.Data = Any.Pack(message);
-                rPCMsg.Data.Unpack<Attack>();
-
-                BitConverterHelper.WriteMessage(msg.bytes, ref offset, rPCMsg);
-
-                msg.length = offset;
-                Main.Instance.Send(msg, type);
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogError(ex.ToString());
-            }
-        }
-
-
-
-        private static void Call(string id, ProtocolType type, params object[] args)
+        public static void Call(string id, params object[] args)
         {
             try
             {
                 Profiler.BeginSample("rpc call");
                 int hash = Globals.Hash(id);
                 BuffMessage msg = Encode(hash, args);
-                Main.Instance.Send(msg, type);
+                Main.Instance.Send(msg);
                 Profiler.EndSample();
             }
             catch(Exception ex)

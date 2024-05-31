@@ -35,7 +35,6 @@ namespace UI
         private void OnConnect()
         {
             Main.Tcp.Connect(_ip.text, int.Parse(_port.text));
-            Main.Udp.Connect(_ip.text, int.Parse(_port.text));
             GameFrame.myRole.Create(_user.text);
         }
 
@@ -48,7 +47,7 @@ namespace UI
         {
             for (int i = 0; i < 100; i++)
             {
-                RPCMoudle.UdpCall("ReqUdp", i);
+                RPCMoudle.Call("ReqUdp", i);
             }
         }
 
@@ -57,7 +56,7 @@ namespace UI
             Attack attack = new Attack();
             attack.Id = 10;
             attack.TargetId = 1001;
-            RPCMoudle.UdpCall("ReqAttack", 125, "À×öªÍòÀ¤", 5.21f, attack, 10.2563);
+            RPCMoudle.Call("ReqAttack", 125, "À×öªÍòÀ¤", 5.21f, attack, 10.2563);
         }
 
         private void OnReqItem()
@@ -81,7 +80,7 @@ namespace UI
                 itemList.ItemBinds.Add(itemBind);
             }
 
-            RPCMoudle.TcpCall("ReqDelete", itemList);
+            RPCMoudle.Call("ReqDelete", itemList);
         }
 
         private void OnReqMove()
@@ -94,7 +93,7 @@ namespace UI
                 move.Y = 20;
                 move.Speed = 100;
                 move.Dir = 20;
-                RPCMoudle.TcpCall("ReqMove", move);
+                RPCMoudle.Call("ReqMove", move);
             }
             Profiler.EndSample();
 
@@ -106,7 +105,7 @@ namespace UI
                 move.Y = 20;
                 move.Speed = 100;
                 move.Dir = 20;
-                RPCMoudle.TcpCall("ReqReflectMove", new object[] { move });
+                RPCMoudle.Call("ReqReflectMove", new object[] { move });
             }
             Profiler.EndSample();
         }
