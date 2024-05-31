@@ -165,6 +165,7 @@ namespace Game
                             // 没有足够的数据读取下一个消息的长度
                             break;
 
+
                         int dataLength = BitConverter.ToInt32(_recvBuff, offset);
                         if (_recvOffset - offset < dataLength + sizeof(int))
                             // 没有足够的数据读取完整的消息
