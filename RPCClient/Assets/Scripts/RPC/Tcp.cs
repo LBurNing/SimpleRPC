@@ -9,6 +9,8 @@ using UnityEngine.Profiling;
 using System.IO;
 using Unity.VisualScripting;
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Game
 {
@@ -33,7 +35,7 @@ namespace Game
         private byte[] _recvBuff;
         private int _recvOffset;
         private int _delay = 10;
-        private CancellationTokenSource _recvCancel;
+        private CancellationTokenSource _recvCancelToken;
         private CancellationTokenSource _sendCancelToken;
 
         public SocketState State { get { return _socketState; } }
@@ -55,7 +57,7 @@ namespace Game
         private void InitTcpClient()
         {
             _tcpClient = new TcpClient();
-            _recvCancel = new CancellationTokenSource();
+            _recvCancelToken = new CancellationTokenSource();
             _sendCancelToken = new CancellationTokenSource();
         }
 
@@ -117,8 +119,8 @@ namespace Game
 
         private void StartAsyncTasks()
         {
-            _ = SendThread();
-            _ = RecvThread();
+            UniTask send = UniTask.Create(SendThread);
+            UniTask recv = UniTask.Create(RecvThread);
         }
 
         private async UniTask SendThread()
@@ -137,6 +139,9 @@ namespace Game
 
                     try
                     {
+                        if(_sendCancelToken.IsCancellationRequested)
+                            break;
+
                         await Stream.WriteAsync(msg.bytes, 0, msg.length, linkedCts.Token);
                         LogHelper.Log($"·¢ËÍÍê³É: {msg.length} byte");
                         GameFrame.message.PutBuffMessage(msg);
@@ -177,7 +182,10 @@ namespace Game
             {
                 try
                 {
-                    int length = await Stream.ReadAsync(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset, _recvCancel.Token);
+                    if (_recvCancelToken.IsCancellationRequested) 
+                        break;
+
+                    int length = await Stream.ReadAsync(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset, _recvCancelToken.Token);
                     if (length == 0)
                     {
                         LogHelper.Log("connect failed...");
@@ -262,10 +270,10 @@ namespace Game
             {
                 if (_tcpClient.Connected)
                 {
-                    _recvCancel.Dispose();
+                    SetSocketState(SocketState.Close);
+                    _recvCancelToken.Dispose();
                     _sendCancelToken.Dispose();
                     _tcpClient.Close();
-                    SetSocketState(SocketState.Close);
                 }
             }
             catch (Exception ex)

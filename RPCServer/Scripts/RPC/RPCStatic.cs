@@ -19,12 +19,10 @@ namespace Game
             this._action = action;
         }
 
-        public override void Decode(byte[] buffer)
+        public override void Decode(Role role, byte[] buffer)
         {
             base.buffer = buffer;
-            int offset = 1;
-            object obj = ToString(ref offset);
-            Role role = Game.gateway.GetRole((string)obj);
+            base.Decode(role, buffer);
             DateType dateType = (DateType)buffer[offset++];
 
             try

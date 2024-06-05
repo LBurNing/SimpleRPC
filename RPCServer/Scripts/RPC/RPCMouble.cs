@@ -155,15 +155,15 @@ namespace Game
             Game.gateway.Send(msg);
         }
 
-        public static void OnRPC(BuffMessage msg)
+        public static void OnRPC(Role role, BuffMessage msg)
         {
             if(msg == null)
                 return;
 
-            Invoke(msg.bytes);
+            Invoke(role, msg.bytes);
         }
 
-        public static void Invoke(byte[] buffer)
+        public static void Invoke(Role role, byte[] buffer)
         {
             if (buffer == null || buffer.Length < sizeof(int))
             {
@@ -182,7 +182,7 @@ namespace Game
             try
             {
                 Array.Copy(buffer, sizeof(int), buffMessage.bytes, 0, buffer.Length - sizeof(int));
-                method.Decode(buffMessage.bytes);
+                method.Decode(role, buffMessage.bytes);
             }
             catch (Exception ex)
             {

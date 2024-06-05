@@ -18,7 +18,7 @@ namespace Game
         public void Create(string id)
         {
             _role = new Role(id);
-            Connect();
+            //Connect();
         }
 
         private void Connect()

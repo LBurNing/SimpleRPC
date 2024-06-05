@@ -27,15 +27,12 @@ namespace Game
             _param[index] = message;
         }
 
-        public override void Decode(byte[] buffer)
+        public override void Decode(Role role, byte[] buffer)
         {
             base.buffer = buffer;
+            base.Decode(role, buffer);
             _paramIndex = 1;
-            int offset = 1;
             List<object> objs = new List<object>();
-
-            object obj = ToString(ref offset);
-            Role role = Game.gateway.GetRole((string)obj);
             objs.Add(role);
 
             for (int index = 1; index < _types.Count; index++)
@@ -47,7 +44,7 @@ namespace Game
                     LogHelper.Log($"dateType bo equals, recv: {Enum.GetName(typeof(DateType), type)} != local: {Enum.GetName(typeof(DateType), dateType)}");
                 }
 
-                obj = ToObject(dateType, ref offset);
+                object obj = ToObject(dateType, ref offset);
                 objs.Add(obj!);
                 _paramIndex++;
             }

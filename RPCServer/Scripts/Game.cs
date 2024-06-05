@@ -11,7 +11,6 @@ namespace Game
         private static int FrameCount = 60;
         public static Gateway gateway { get; set; }
 
-
         public static void Init()
         {
             RPCMouble.Register<Move>("ReqMove", ReqMove);

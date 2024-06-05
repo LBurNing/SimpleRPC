@@ -13,21 +13,18 @@ namespace Game
     public class Gateway
     {
         private TcpListener? _listener;
-        private Dictionary<string, Role> _roles;
+        private List<Role> _roles;
 
         public Gateway()
         {
-            _roles = new Dictionary<string, Role>();
+            _roles = new List<Role>();
         }
 
         public void Update()
         {
             foreach (var client in _roles)
             {
-                client.Value.Update();
-
-                if (!client.Value.TcpConnect)
-                    _roles.Remove(client.Key);
+                client.Update();
             }
         }
 
@@ -40,29 +37,8 @@ namespace Game
             while (true)
             {
                 TcpClient client = await _listener.AcceptTcpClientAsync();
-                _ = Task.Run(() => HandleClient(client));
-            }
-        }
-
-        private async Task HandleClient(TcpClient client)
-        {
-            byte[] bytes = new byte[4];
-            while (true)
-            {
-                await client.GetStream().ReadAtLeastAsync(bytes, sizeof(int));
-                int dateLength = BitConverter.ToInt32(bytes);
-                bytes = new byte[dateLength];
-                await client.GetStream().ReadAtLeastAsync(bytes, dateLength);
-                string id = Encoding.UTF8.GetString(bytes);
-
-                Role? role;
-                if(_roles.TryGetValue(id, out role))
-                    role.Dispose();
-
-                role = new Role(id, client);
-                _roles[id] = role;
-                LogHelper.Log($"{id} Client connected...");
-                break;
+                _roles.Add(new Role(client));
+                LogHelper.Log("connected...");
             }
         }
 
@@ -70,23 +46,13 @@ namespace Game
         {
             foreach (var role in _roles)
             {
-                role.Value.Send(message);
+                role.Send(message);
             }
         }
 
-        public Role GetRole(string id)
+        public void Remove(Role role)
         {
-            Role role;
-            if (_roles.TryGetValue(id, out role))
-                return role;
-
-            return null;
-        }
-
-        public void RemoveRole(string id)
-        {
-            if (_roles.ContainsKey(id))
-                _roles.Remove(id);
+            _roles.Remove(role);
         }
 
         public void Destroy()

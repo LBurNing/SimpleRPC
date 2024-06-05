@@ -10,30 +10,39 @@ namespace Game
     public class Role : IDisposable
     {
         private string _user;
-        private Tcp _tcp;
+        private SocketClient _client;
 
-        public Role(string user, TcpClient tcp) 
+        public Role(TcpClient client) 
         {
-            _user = user;
-            _tcp = new Tcp(tcp);
+            _client = new SocketClient(client, this);
         }
 
         public void Update()
         {
-            _tcp?.Update();
+            _client?.Update();
         }
 
         public void Dispose()
         {
-            _tcp?.Dispose();
+            _client?.Dispose();
+            Game.gateway.Remove(this);
         }
 
         public void Send(BuffMessage message)
         {
-            _tcp.Send(message);
+            _client.Send(message);
         }
 
-        public bool TcpConnect { get { return _tcp.Connected; } }
-        public string User { get { return _user; } }
+        public SocketClient client
+        {
+            get { return _client; }
+            set { _client = value; }
+        }
+
+        public string id
+        {
+            set { _user = value; }
+            get { return _user; }
+        }
     }
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Game
 {
-    class Tcp : IDisposable
+    public class SocketClient : IDisposable
     {
         private const int BUFFER_SIZE = 100 * 1024;
         private ConcurrentQueue<BuffMessage> _sendMsgs;
@@ -16,14 +16,15 @@ namespace Game
         private ObjectFactory<BuffMessage> _msg;
         private CancellationTokenSource _recvCancelToken;
         private CancellationTokenSource _sendCancelToken;
-
         private byte[] _recvBuff;
         private int _recvOffset;
         private TcpClient _client;
+        private Role _role;
 
-        public Tcp(TcpClient client)
+        public SocketClient(TcpClient client, Role role)
         {
-            this._client = client;
+            _role = role;
+            _client = client;
             _sendMsgs = new ConcurrentQueue<BuffMessage>();
             _receiveMsgs = new ConcurrentQueue<BuffMessage>();
             _msg = new ObjectFactory<BuffMessage>();
@@ -31,15 +32,15 @@ namespace Game
             _sendCancelToken = new CancellationTokenSource();
             _recvBuff = new byte[BUFFER_SIZE];
             _recvOffset = 0;
-            _ = SendThread();
-            _ =RecvThread();
+            Task.Run(SendThread, _sendCancelToken.Token);
+            Task.Run(RecvThread, _recvCancelToken.Token);
         }
 
         public void Update()
         {
             if(_receiveMsgs.TryDequeue(out BuffMessage msg))
             {
-                RPCMouble.OnRPC(msg);
+                RPCMouble.OnRPC(_role, msg);
             }
         }
 
@@ -50,7 +51,6 @@ namespace Game
 
         private async Task SendThread()
         {
-            await Task.Yield();
             try
             {
                 while (_client.Connected)
@@ -64,6 +64,9 @@ namespace Game
 
                     try
                     {
+                        if (_sendCancelToken.IsCancellationRequested)
+                            break;
+
                         await _client.GetStream().WriteAsync(msg.bytes, 0, msg.length, linked.Token);
                         LogHelper.Log($"数据发送完成: {msg.length}");
                     }
@@ -109,16 +112,19 @@ namespace Game
 
         private async Task RecvThread()
         {
-            await Task.Yield();
             try
             {
                 while (_client.Connected)
                 {
                     try
                     {
+                        if (_recvCancelToken.IsCancellationRequested)
+                            break;
+
                         int length = await _client.GetStream().ReadAsync(_recvBuff, _recvOffset, _recvBuff.Length - _recvOffset, _recvCancelToken.Token);
                         if (length == 0)
                         {
+                            _role.Dispose();
                             LogHelper.Log("client disconnected..");
                             break;
                         }

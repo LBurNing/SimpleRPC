@@ -8,14 +8,20 @@ namespace Game
 {
     public interface IRPC : IDisposable
     {
-        public void Decode(byte[] buffer);
+        public void Decode(Role role, byte[] buffer);
     }
 
     public abstract class RPCBase : IRPC
     {
         protected byte[] buffer;
+        protected int offset;
 
-        public abstract void Decode(byte[] buffer);
+        public virtual void Decode(Role role, byte[] buffer)
+        {
+            offset = 1;
+            object obj = ToString(ref offset);
+            role.id = (string)obj;
+        }
 
         protected ReadOnlySpan<byte> ReadData(DateType type, ref int offset)
         {
